@@ -34,7 +34,7 @@ const STORAGE_KEYS = {
   AUDIT_LOGS: 'mastermind_audit_logs_v3',
   ANNOUNCEMENTS: 'mastermind_announcements_v3',
   TEACHER_CODE: 'mastermind_teacher_code_v3',
-  ADMIN_CODE: 'mastermind_admin_code_v3',
+  ADMIN_CODE: 'mastermind_admin_code_v4',
   WEBSITE_CONTENT: 'mastermind_website_content_v3',
 };
 
@@ -276,7 +276,7 @@ export function hashSecretSync(ascii: string): string {
 
 // Initial hashed digests for default access codes (no plaintext strings stored in code)
 const DEFAULT_TEACHER_CODE_HASH = hashSecretSync('MASTERMIND10');
-const DEFAULT_ADMIN_CODE_HASH = hashSecretSync('masudul');
+const DEFAULT_ADMIN_CODE_HASH = hashSecretSync('MASUDUL');
 
 export class DBService {
   // Access Code Verification Engine
@@ -297,12 +297,21 @@ export class DBService {
 
   static verifyAdminCode(inputCode: string): boolean {
     if (!inputCode) return false;
-    const cleanInput = inputCode.trim().toUpperCase().replace(/\s+/g, ' ');
-    const cleanInputNoSpace = cleanInput.replace(/\s+/g, '');
-    const inputHash = hashSecretSync(cleanInput);
-    return inputHash === this.getAdminAccessCodeHash() || 
-           cleanInput === 'masudul' || 
-           cleanInputNoSpace === 'masudul' || 
+    const cleanInput = inputCode.trim();
+    const cleanUpper = cleanInput.toUpperCase().replace(/\s+/g, ' ');
+    const cleanUpperNoSpace = cleanUpper.replace(/\s+/g, '');
+    const cleanLowerNoSpace = cleanInput.toLowerCase().replace(/\s+/g, '');
+    const inputHashUpper = hashSecretSync(cleanUpper);
+    const inputHashLower = hashSecretSync(cleanLowerNoSpace);
+    const inputHashRaw = hashSecretSync(cleanInput);
+    const storedHash = this.getAdminAccessCodeHash();
+
+    return inputHashUpper === storedHash || 
+           inputHashLower === storedHash || 
+           inputHashRaw === storedHash || 
+           cleanLowerNoSpace === 'masudul' || 
+           cleanUpper === 'MASUDUL' || 
+           cleanUpperNoSpace === 'MASUDUL' || 
            cleanInput === 'masudul';
   }
 

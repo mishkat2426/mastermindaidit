@@ -2167,7 +2167,7 @@ export const AdminDashboard: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-purple-400 mb-1">New Admin Code (Default: MASTERMIND ADMIN)</label>
+                  <label className="block text-[11px] text-purple-400 mb-1">New Admin Code (Default: masudul)</label>
                   <input
                     type="password"
                     placeholder="Enter new Admin security secret"

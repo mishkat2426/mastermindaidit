@@ -166,15 +166,15 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
                     </span>
                   </div>
 
-                  <div className="mt-5 space-y-1">
-                    <h3 className="text-lg font-bold text-[#0F2B5A] group-hover:text-brand-600 transition-colors flex items-center justify-between">
+                  <div className="mt-5 space-y-1 ">
+                    <h3 className="text-lg font-bold text-[#0F2B5A] group-hover:text-brand-600 transition-colors flex items-center  justify-center">
                       <span>{cat.name}</span>
                       <ArrowUpRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-brand-600 transition-all -translate-x-1 group-hover:translate-x-0" />
                     </h3>
-                    <p className="text-xs font-semibold text-brand-600/80">{cat.bengaliName}</p>
-                    <p className="text-xs text-slate-500 leading-relaxed pt-1 line-clamp-2">
+                    <p className="text-xs font-semibold text-brand-600/80 text-center">{cat.bengaliName}</p>
+                    {/* <p className="text-xs text-slate-500  pt-1 text-center">
                       {cat.description}
-                    </p>
+                    </p> */}
                   </div>
 
                   {/* Subtle internal light on hover */}

@@ -589,12 +589,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: 'Password must be at least 6 characters long.' };
     }
 
-    const cleanSecCode = securityCode.trim().toUpperCase().replace(/\s+/g, ' ');
-    const cleanSecCodeNoSpace = cleanSecCode.replace(/\s+/g, '');
+    const cleanSecCode = securityCode.trim();
+    const cleanSecUpper = cleanSecCode.toUpperCase().replace(/\s+/g, ' ');
+    const cleanSecLower = cleanSecCode.toLowerCase().replace(/\s+/g, '');
     const isCodeValid = DBService.verifyAdminCode(securityCode) ||
-                        cleanSecCode === 'masudul' ||
-                        cleanSecCodeNoSpace === 'masudul' ||
-                        cleanSecCode === 'masudul';
+                        cleanSecLower === 'masudul' ||
+                        cleanSecUpper === 'MASUDUL';
 
     if (!isCodeValid) {
       setIsLoading(false);
