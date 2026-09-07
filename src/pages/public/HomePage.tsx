@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, BookOpen, Compass, ShieldCheck, Zap } from 'lucide-react';
@@ -11,6 +11,7 @@ import { StudentProjectsGallery } from '../../components/home/StudentProjectsGal
 import { StatsCounter } from '../../components/home/StatsCounter';
 import { TestimonialSection } from '../../components/home/TestimonialSection';
 import { SeoContentSection } from '../../components/home/SeoContentSection';
+import { CertificateShowcase } from '../../components/home/CertificateShowcase';
 import { Footer } from '../../components/layout/Footer';
 import { DBService } from '../../services/db';
 import { ScrollReveal } from '../../components/layout/ScrollReveal';
@@ -26,6 +27,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 }) => {
   const navigate = useNavigate();
   const marketplaceBanner = DBService.getWebsiteContent('marketplace_banner');
+  const [isCertificateOpen, setIsCertificateOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -35,6 +37,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         onExploreCourses={() => navigate('/courses')}
         onOpenPreview={() => navigate('/courses')}
         onOpenPathFinder={onOpenPathFinder}
+        onOpenCertificateShowcase={() => setIsCertificateOpen(true)}
       />
 
       {/* Marquee Partner Logos */}
@@ -106,6 +109,12 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* Footer */}
       <Footer onSelectCategory={(catId) => navigate(catId ? `/courses?category=${catId}` : '/courses')} />
+
+      {/* Interactive Certificate Showcase Modal */}
+      <CertificateShowcase
+        isOpen={isCertificateOpen}
+        onClose={() => setIsCertificateOpen(false)}
+      />
 
     </div>
   );

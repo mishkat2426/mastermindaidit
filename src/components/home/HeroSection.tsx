@@ -22,6 +22,7 @@ interface HeroSectionProps {
   onExploreCourses: () => void;
   onOpenPreview: () => void;
   onOpenPathFinder: () => void;
+  onOpenCertificateShowcase?: () => void;
 }
 
 // Staggered entrance animation variants
@@ -45,11 +46,11 @@ const fadeUpVariant = (delay: number = 0) => ({
   },
 });
 
-export const 
-HeroSection: React.FC<HeroSectionProps> = ({
+export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreCourses,
   onOpenPreview,
   onOpenPathFinder,
+  onOpenCertificateShowcase,
 }) => {
   // Query actual real enrollments from database (Requirement #3 & #4: NO FAKE NAMES OR LOCATIONS)
   const realEnrollments = DBService.getEnrollments();
@@ -149,10 +150,14 @@ HeroSection: React.FC<HeroSectionProps> = ({
               variants={fadeUpVariant(0.15)}
               className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs text-slate-200 font-bold max-w-xl mx-auto lg:mx-0 pt-1"
             >
-              <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-2 rounded-xl">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Verified Certificates</span>
-              </div>
+              <button
+                onClick={onOpenCertificateShowcase}
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/15 border border-white/10 px-3 py-2 rounded-xl text-xs text-slate-200 font-bold transition hover:text-amber-300 text-left cursor-pointer group"
+                title="Click to preview verified certificate"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 group-hover:scale-110 transition" />
+                <span className="underline underline-offset-2 decoration-amber-400/50">Verified Certificates</span>
+              </button>
               <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-2 rounded-xl">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>Lifetime Video Access</span>
