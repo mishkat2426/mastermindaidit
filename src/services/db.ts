@@ -184,6 +184,9 @@ function saveData<T>(key: string, data: T): void {
       if (key === STORAGE_KEYS.COURSES) {
         window.dispatchEvent(new CustomEvent('mastermind_courses_updated', { detail: data }));
       }
+      if (key === STORAGE_KEYS.USERS) {
+        window.dispatchEvent(new CustomEvent('mastermind_users_updated', { detail: data }));
+      }
     }
   } catch (e) {
     console.error('Database write error:', e);
@@ -273,7 +276,7 @@ export function hashSecretSync(ascii: string): string {
 
 // Initial hashed digests for default access codes (no plaintext strings stored in code)
 const DEFAULT_TEACHER_CODE_HASH = hashSecretSync('MASTERMIND10');
-const DEFAULT_ADMIN_CODE_HASH = hashSecretSync('MASTERMIND ADMIN');
+const DEFAULT_ADMIN_CODE_HASH = hashSecretSync('masudul');
 
 export class DBService {
   // Access Code Verification Engine
@@ -298,9 +301,9 @@ export class DBService {
     const cleanInputNoSpace = cleanInput.replace(/\s+/g, '');
     const inputHash = hashSecretSync(cleanInput);
     return inputHash === this.getAdminAccessCodeHash() || 
-           cleanInput === 'MASTERMIND ADMIN' || 
-           cleanInputNoSpace === 'MASTERMINDADMIN' || 
-           cleanInput === 'ADMIN';
+           cleanInput === 'masudul' || 
+           cleanInputNoSpace === 'masudul' || 
+           cleanInput === 'masudul';
   }
 
   static rotateAccessCodes(adminName: string, newTeacherCode?: string, newAdminCode?: string): void {
@@ -416,7 +419,18 @@ export class DBService {
 
   // Users
   static getUsers(): User[] {
-    return loadData<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
+    const users = loadData<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
+    const seen = new Set<string>();
+    const cleaned: User[] = [];
+    for (const u of users) {
+      const emailKey = u.email?.toLowerCase();
+      if (u.id && emailKey && !seen.has(u.id) && !seen.has(emailKey)) {
+        seen.add(u.id);
+        seen.add(emailKey);
+        cleaned.push(u);
+      }
+    }
+    return cleaned;
   }
 
   static getUserById(id: string): User | undefined {
@@ -429,6 +443,17 @@ export class DBService {
 
   static createUser(user: Omit<User, 'id' | 'status' | 'createdAt' | 'updatedAt'>): User {
     const users = this.getUsers();
+    // Check if user with same email already exists to prevent duplicate entries
+    const existingIdx = users.findIndex((u) => u.email.toLowerCase() === user.email.toLowerCase());
+    if (existingIdx !== -1) {
+      users[existingIdx] = {
+        ...users[existingIdx],
+        ...user,
+        updatedAt: new Date().toISOString(),
+      };
+      saveData(STORAGE_KEYS.USERS, users);
+      return users[existingIdx];
+    }
     const newUser: User = {
       ...user,
       id: `usr-${Date.now()}`,
@@ -547,6 +572,77 @@ export class DBService {
       this.logAdminAction('usr-admin-1', adminName, `Deleted user account: ${target.name}`, 'User', id);
     }
     return true;
+  }
+
+  static adminResetUserPassword(userId: string, newPassword: string, adminName: string): { success: boolean; error?: string } {
+    const users = this.getUsers();
+    const idx = users.findIndex((u) => u.id === userId);
+    if (idx === -1) {
+      return { success: false, error: 'User account not found.' };
+    }
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, error: 'New password must be at least 6 characters.' };
+    }
+    const user = users[idx];
+    users[idx] = {
+      ...user,
+      passwordHash: hashSecretSync(newPassword),
+      updatedAt: new Date().toISOString(),
+    };
+    saveData(STORAGE_KEYS.USERS, users);
+    this.logAdminAction('usr-admin-1', adminName, `Admin reset password for user ${user.name} (${user.email})`, 'Security', user.id);
+    return { success: true };
+  }
+
+  static adminCreateUser(userData: {
+    name: string;
+    email: string;
+    phone?: string;
+    role: UserRole;
+    status?: 'ACTIVE' | 'SUSPENDED';
+    password?: string;
+    bio?: string;
+  }, adminName: string): { success: boolean; user?: User; error?: string } {
+    const cleanEmail = userData.email.trim().toLowerCase();
+    const cleanName = userData.name.trim();
+    if (!cleanName) return { success: false, error: 'User full name is required.' };
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return { success: false, error: 'Valid email address is required.' };
+    }
+    const existing = this.getUserByEmail(cleanEmail);
+    if (existing) {
+      return { success: false, error: 'An account with this email address already exists.' };
+    }
+    const password = userData.password && userData.password.trim() ? userData.password.trim() : 'password123';
+    if (password.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters.' };
+    }
+
+    const defaultAvatars: Record<UserRole, string> = {
+      ADMIN: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      TEACHER: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+      STUDENT: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    };
+
+    const newUser: User = {
+      id: `usr-${Date.now()}`,
+      name: cleanName,
+      email: cleanEmail,
+      phone: userData.phone?.trim() || '',
+      role: userData.role,
+      status: userData.status || 'ACTIVE',
+      avatar: defaultAvatars[userData.role] || defaultAvatars.STUDENT,
+      bio: userData.bio?.trim() || '',
+      passwordHash: hashSecretSync(password),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const users = this.getUsers();
+    users.push(newUser);
+    saveData(STORAGE_KEYS.USERS, users);
+    this.logAdminAction('usr-admin-1', adminName, `Created new ${newUser.role} account: ${newUser.name} (${newUser.email})`, 'User', newUser.id);
+    return { success: true, user: newUser };
   }
 
   // Courses

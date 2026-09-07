@@ -39,20 +39,72 @@ const AUTH_SESSION_KEY = 'mastermind_auth_session_v3';
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    try {
+      const raw = localStorage.getItem(AUTH_SESSION_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const fresh = DBService.getUserById(parsed.id) || DBService.getUserByEmail(parsed.email);
+        return fresh || parsed;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
+
+  // Sync active user state whenever DBService users list updates
+  useEffect(() => {
+    const handleUsersUpdated = () => {
+      setCurrentUser((prev) => {
+        if (!prev) return null;
+        const freshUser = DBService.getUserById(prev.id) || DBService.getUserByEmail(prev.email);
+        if (freshUser) {
+          localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(freshUser));
+          return freshUser;
+        }
+        return prev;
+      });
+    };
+
+    window.addEventListener('mastermind_users_updated', handleUsersUpdated);
+    window.addEventListener('storage', handleUsersUpdated);
+    return () => {
+      window.removeEventListener('mastermind_users_updated', handleUsersUpdated);
+      window.removeEventListener('storage', handleUsersUpdated);
+    };
+  }, []);
 
   // Restore session from Firebase Auth and sync with DBService
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+      const storedSessionRaw = localStorage.getItem(AUTH_SESSION_KEY);
+      let storedSession: User | null = null;
+      try {
+        if (storedSessionRaw) storedSession = JSON.parse(storedSessionRaw);
+      } catch (e) {}
+
       if (firebaseUser && firebaseUser.email) {
+        // If an Admin or Teacher is logged in locally, but Firebase is holding a different user:
+        if (storedSession && (storedSession.role === 'ADMIN' || storedSession.role === 'TEACHER')) {
+          if (storedSession.email.toLowerCase() !== firebaseUser.email.toLowerCase()) {
+            // Keep local admin session intact, sign out mismatched firebase user
+            await signOut(auth).catch(() => {});
+            setCurrentUser(storedSession);
+            setIsLoading(false);
+            return;
+          }
+        }
+
         let name = firebaseUser.displayName || 'User';
         let role: UserRole = 'STUDENT';
+        let parsedDisplayName: any = null;
         try {
           if (firebaseUser.displayName && firebaseUser.displayName.startsWith('{')) {
-            const parsed = JSON.parse(firebaseUser.displayName);
-            if (parsed.name) name = parsed.name;
-            if (parsed.role) role = parsed.role;
+            parsedDisplayName = JSON.parse(firebaseUser.displayName);
+            if (parsedDisplayName.name) name = parsedDisplayName.name;
+            if (parsedDisplayName.role) role = parsedDisplayName.role;
           }
         } catch (e) {
           // Keep defaults
@@ -66,11 +118,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role,
             avatar: firebaseUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
           });
+        } else {
+          // If user is suspended in DB, force signOut
+          if (localUser.status === 'SUSPENDED') {
+            await signOut(auth).catch(() => {});
+            localStorage.removeItem(AUTH_SESSION_KEY);
+            setCurrentUser(null);
+            setIsLoading(false);
+            return;
+          }
+          // If DB role or name differs from Firebase displayName, sync it
+          if (!parsedDisplayName || parsedDisplayName.role !== localUser.role || parsedDisplayName.name !== localUser.name) {
+            firebaseUpdateProfile(firebaseUser, {
+              displayName: JSON.stringify({ name: localUser.name, role: localUser.role })
+            }).catch(() => {});
+          }
         }
 
         setCurrentUser(localUser);
+        localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(localUser));
       } else {
+        // firebaseUser is null: check if we have a valid saved local session (e.g. seed admin)
+        if (storedSession && (storedSession.role === 'ADMIN' || storedSession.role === 'TEACHER')) {
+          const fresh = DBService.getUserById(storedSession.id) || DBService.getUserByEmail(storedSession.email);
+          if (fresh && fresh.status !== 'SUSPENDED') {
+            setCurrentUser(fresh);
+            setIsLoading(false);
+            return;
+          }
+        }
         setCurrentUser(null);
+        localStorage.removeItem(AUTH_SESSION_KEY);
       }
       setIsLoading(false);
     });
@@ -91,20 +169,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
-      const firebaseUser = userCredential.user;
+      let localUser = DBService.getUserByEmail(cleanEmail);
+      let firebaseUser: any = null;
 
-      let name = firebaseUser.displayName || 'User';
-      let role: UserRole = requestedRole || 'STUDENT';
       try {
-        if (firebaseUser.displayName && firebaseUser.displayName.startsWith('{')) {
+        const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+        firebaseUser = userCredential.user;
+      } catch (fbErr: any) {
+        // If user not in Firebase but exists in DB with matching password hash, allow login
+        if (
+          (fbErr.code === 'auth/user-not-found' || fbErr.code === 'auth/invalid-credential') &&
+          localUser &&
+          localUser.passwordHash &&
+          localUser.passwordHash === hashSecretSync(password)
+        ) {
+          if (localUser.status === 'SUSPENDED') {
+            setIsLoading(false);
+            return { success: false, error: 'Account suspended. Please contact platform support.' };
+          }
+          if (auth.currentUser && auth.currentUser.email?.toLowerCase() !== cleanEmail) {
+            await signOut(auth).catch(() => {});
+          }
+          setCurrentUser(localUser);
+          localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(localUser));
+          setIsLoading(false);
+          return { success: true, user: localUser };
+        }
+        throw fbErr;
+      }
+
+      let name = localUser?.name || firebaseUser.displayName || 'User';
+      let role: UserRole = localUser?.role || requestedRole || 'STUDENT';
+      try {
+        if (!localUser && firebaseUser.displayName && firebaseUser.displayName.startsWith('{')) {
           const parsed = JSON.parse(firebaseUser.displayName);
           if (parsed.name) name = parsed.name;
           if (parsed.role) role = parsed.role;
         }
       } catch (e) {}
 
-      let localUser = DBService.getUserByEmail(cleanEmail);
       if (!localUser) {
         localUser = DBService.createUser({
           name,
@@ -116,11 +219,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (localUser.status === 'SUSPENDED') {
         await signOut(auth);
+        localStorage.removeItem(AUTH_SESSION_KEY);
         setIsLoading(false);
         return { success: false, error: 'Account suspended. Please contact platform support.' };
       }
 
+      // Sync Firebase displayName if out of sync
+      try {
+        if (firebaseUser && (firebaseUser.displayName !== JSON.stringify({ name: localUser.name, role: localUser.role }))) {
+          await firebaseUpdateProfile(firebaseUser, {
+            displayName: JSON.stringify({ name: localUser.name, role: localUser.role })
+          });
+        }
+      } catch (e) {}
+
       setCurrentUser(localUser);
+      localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(localUser));
       setIsLoading(false);
       return { success: true, user: localUser };
     } catch (e: any) {
@@ -144,15 +258,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ): Promise<{ success: boolean; user?: User; error?: string }> => {
     setIsLoading(true);
     const cleanEmail = email.trim().toLowerCase();
+    const localUser = DBService.getUserByEmail(cleanEmail);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
-      const firebaseUser = userCredential.user;
-
-      let name = firebaseUser.displayName || 'Teacher';
-      let role: UserRole = 'TEACHER';
+      let firebaseUser: any = null;
       try {
-        if (firebaseUser.displayName && firebaseUser.displayName.startsWith('{')) {
+        const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+        firebaseUser = userCredential.user;
+      } catch (fbErr: any) {
+        // Fallback to local DB check for newly admin-created teachers or seed accounts
+        if (
+          (fbErr.code === 'auth/user-not-found' || fbErr.code === 'auth/invalid-credential') &&
+          localUser &&
+          localUser.passwordHash &&
+          localUser.passwordHash === hashSecretSync(password)
+        ) {
+          if (localUser.status === 'SUSPENDED') {
+            setIsLoading(false);
+            return { success: false, error: 'Account suspended. Please contact platform support.' };
+          }
+          if (localUser.role !== 'TEACHER' && localUser.role !== 'ADMIN') {
+            setIsLoading(false);
+            return { success: false, error: 'Unauthorized role. You are not a Teacher.' };
+          }
+          if (auth.currentUser && auth.currentUser.email?.toLowerCase() !== cleanEmail) {
+            await signOut(auth).catch(() => {});
+          }
+          const result = DBService.authenticateTeacher(cleanEmail, password, teacherAccessCode);
+          if (result.success && result.user) {
+            setCurrentUser(result.user);
+            localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(result.user));
+          }
+          setIsLoading(false);
+          return result;
+        }
+        throw fbErr;
+      }
+
+      let name = localUser?.name || firebaseUser.displayName || 'Teacher';
+      let role: UserRole = localUser?.role || 'TEACHER';
+      try {
+        if (!localUser && firebaseUser.displayName && firebaseUser.displayName.startsWith('{')) {
           const parsed = JSON.parse(firebaseUser.displayName);
           if (parsed.name) name = parsed.name;
           if (parsed.role) role = parsed.role;
@@ -161,19 +307,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (role !== 'TEACHER' && role !== 'ADMIN') {
         await signOut(auth);
+        localStorage.removeItem(AUTH_SESSION_KEY);
         setIsLoading(false);
         return { success: false, error: 'Unauthorized role. You are not a Teacher.' };
       }
 
+      // Keep Firebase displayName synced with actual DB role
+      try {
+        if (firebaseUser && localUser && (firebaseUser.displayName !== JSON.stringify({ name: localUser.name, role: localUser.role }))) {
+          await firebaseUpdateProfile(firebaseUser, {
+            displayName: JSON.stringify({ name: localUser.name, role: localUser.role })
+          });
+        }
+      } catch (e) {}
+
       const result = DBService.authenticateTeacher(cleanEmail, password, teacherAccessCode);
       if (!result.success) {
         await signOut(auth);
+        localStorage.removeItem(AUTH_SESSION_KEY);
         setIsLoading(false);
         return result;
       }
 
       if (result.user) {
         setCurrentUser(result.user);
+        localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(result.user));
       }
       setIsLoading(false);
       return result;
@@ -198,15 +356,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ): Promise<{ success: boolean; user?: User; error?: string }> => {
     setIsLoading(true);
     const cleanEmail = email.trim().toLowerCase();
+    const localUser = DBService.getUserByEmail(cleanEmail);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
-      const firebaseUser = userCredential.user;
-
-      let name = firebaseUser.displayName || 'Admin';
-      let role: UserRole = 'ADMIN';
+      let firebaseUser: any = null;
       try {
-        if (firebaseUser.displayName && firebaseUser.displayName.startsWith('{')) {
+        const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+        firebaseUser = userCredential.user;
+      } catch (fbErr: any) {
+        // Fallback to local DB check for seed admins or newly created admins
+        if (
+          (fbErr.code === 'auth/user-not-found' || fbErr.code === 'auth/invalid-credential') &&
+          localUser &&
+          localUser.passwordHash &&
+          localUser.passwordHash === hashSecretSync(password)
+        ) {
+          if (localUser.status === 'SUSPENDED') {
+            setIsLoading(false);
+            return { success: false, error: 'Account suspended. Please contact platform support.' };
+          }
+          if (localUser.role !== 'ADMIN') {
+            setIsLoading(false);
+            return { success: false, error: 'Unauthorized role. You are not an Admin.' };
+          }
+          // If Firebase had an active session of someone else, sign it out to prevent pollution
+          if (auth.currentUser && auth.currentUser.email?.toLowerCase() !== cleanEmail) {
+            await signOut(auth).catch(() => {});
+          }
+          const result = DBService.authenticateAdmin(cleanEmail, password, adminSecurityCode);
+          if (result.success && result.user) {
+            setCurrentUser(result.user);
+            localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(result.user));
+          }
+          setIsLoading(false);
+          return result;
+        }
+        throw fbErr;
+      }
+
+      let name = localUser?.name || firebaseUser.displayName || 'Admin';
+      let role: UserRole = localUser?.role || 'ADMIN';
+      try {
+        if (!localUser && firebaseUser.displayName && firebaseUser.displayName.startsWith('{')) {
           const parsed = JSON.parse(firebaseUser.displayName);
           if (parsed.name) name = parsed.name;
           if (parsed.role) role = parsed.role;
@@ -215,19 +406,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (role !== 'ADMIN') {
         await signOut(auth);
+        localStorage.removeItem(AUTH_SESSION_KEY);
         setIsLoading(false);
         return { success: false, error: 'Unauthorized role. You are not an Admin.' };
       }
 
+      // Keep Firebase displayName synced with actual DB role
+      try {
+        if (firebaseUser && localUser && (firebaseUser.displayName !== JSON.stringify({ name: localUser.name, role: localUser.role }))) {
+          await firebaseUpdateProfile(firebaseUser, {
+            displayName: JSON.stringify({ name: localUser.name, role: localUser.role })
+          });
+        }
+      } catch (e) {}
+
       const result = DBService.authenticateAdmin(cleanEmail, password, adminSecurityCode);
       if (!result.success) {
         await signOut(auth);
+        localStorage.removeItem(AUTH_SESSION_KEY);
         setIsLoading(false);
         return result;
       }
 
       if (result.user) {
         setCurrentUser(result.user);
+        localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(result.user));
       }
       setIsLoading(false);
       return result;
@@ -274,6 +477,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = DBService.activateTeacherAccount(cleanName, cleanEmail, phone, password, teacherAccessCode);
       if (result.success && result.user) {
         setCurrentUser(result.user);
+        localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(result.user));
       }
       setIsLoading(false);
       return result;
@@ -344,6 +548,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       setCurrentUser(newUser);
+      localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(newUser));
       setIsLoading(false);
       return { success: true, user: newUser };
     } catch (e: any) {
@@ -387,9 +592,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanSecCode = securityCode.trim().toUpperCase().replace(/\s+/g, ' ');
     const cleanSecCodeNoSpace = cleanSecCode.replace(/\s+/g, '');
     const isCodeValid = DBService.verifyAdminCode(securityCode) ||
-                        cleanSecCode === 'MASTERMIND ADMIN' ||
-                        cleanSecCodeNoSpace === 'MASTERMINDADMIN' ||
-                        cleanSecCode === 'ADMIN';
+                        cleanSecCode === 'masudul' ||
+                        cleanSecCodeNoSpace === 'masudul' ||
+                        cleanSecCode === 'masudul';
 
     if (!isCodeValid) {
       setIsLoading(false);
@@ -415,6 +620,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       setCurrentUser(newUser);
+      localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(newUser));
       setIsLoading(false);
       return { success: true, user: newUser };
     } catch (e: any) {
@@ -430,7 +636,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    await signOut(auth);
+    await signOut(auth).catch(() => {});
+    localStorage.removeItem(AUTH_SESSION_KEY);
     setCurrentUser(null);
   };
 
