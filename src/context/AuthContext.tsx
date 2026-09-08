@@ -397,7 +397,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsLoading(false);
             return { success: true, user: localUser };
           } else {
-            // Auto-register Admin account for valid security code ADMIN
+            // Auto-register Admin account for valid security code ADMINISTRATION
             const nameFromEmail = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
             const formattedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1) + ' (Admin)';
             const newAdmin = DBService.createUser({

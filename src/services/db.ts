@@ -328,7 +328,6 @@ export class DBService {
 
   // Access Code Verification Engine
   static getTeacherAccessCodeHash(): string {
-
     return loadData<string>(STORAGE_KEYS.TEACHER_CODE, DEFAULT_TEACHER_CODE_HASH);
   }
 
@@ -346,21 +345,20 @@ export class DBService {
   static verifyAdminCode(inputCode: string): boolean {
     if (!inputCode) return false;
     const cleanInput = inputCode.trim();
-    const cleanUpper = cleanInput.toUpperCase().replace(/\s+/g, ' ');
-    const cleanUpperNoSpace = cleanUpper.replace(/\s+/g, '');
-    const cleanLowerNoSpace = cleanInput.toLowerCase().replace(/\s+/g, '');
+    const cleanUpper = cleanInput.toUpperCase().replace(/\s+/g, '');
+    const cleanLower = cleanInput.toLowerCase().replace(/\s+/g, '');
     const inputHashUpper = hashSecretSync(cleanUpper);
-    const inputHashLower = hashSecretSync(cleanLowerNoSpace);
+    const inputHashLower = hashSecretSync(cleanLower);
     const inputHashRaw = hashSecretSync(cleanInput);
     const storedHash = this.getAdminAccessCodeHash();
 
     return inputHashUpper === storedHash || 
            inputHashLower === storedHash || 
            inputHashRaw === storedHash || 
-           cleanLowerNoSpace === 'admin' || 
            cleanUpper === 'ADMIN' || 
-           cleanUpperNoSpace === 'ADMIN' || 
-           cleanInput === 'admin';
+           cleanLower === 'admin' ||
+           cleanUpper === 'ADMINISTRATION' || 
+           cleanLower === 'administration';
   }
 
   static rotateAccessCodes(adminName: string, newTeacherCode?: string, newAdminCode?: string): void {
