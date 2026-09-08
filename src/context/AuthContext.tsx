@@ -11,7 +11,7 @@ import {
   updateProfile as firebaseUpdateProfile,
   updatePassword as firebaseUpdatePassword
 } from 'firebase/auth';
-import { auth } from '../Firebase/firebase';
+import { auth } from '../services/firebase';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -78,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Restore session from Firebase Auth and sync with DBService
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: any) => {
       const storedSessionRaw = localStorage.getItem(AUTH_SESSION_KEY);
       let storedSession: User | null = null;
       try {

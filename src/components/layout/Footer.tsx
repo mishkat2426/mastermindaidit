@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   BrainCircuit, 
@@ -11,7 +11,9 @@ import {
   ArrowRight,
   ShieldCheck,
   Award,
-  Heart
+  Heart,
+  X,
+  FileText
 } from 'lucide-react';
 import { CATEGORIES } from '../../data/coursesData';
 
@@ -20,6 +22,32 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
+  const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'refund' | null>(null);
+
+  const getPolicyContent = () => {
+    switch (activeModal) {
+      case 'privacy':
+        return {
+          title: 'Privacy Policy',
+          content: 'At Mastermind AidIT, we value your privacy. We collect personal information solely for providing course access, processing certificates, and improving user experience. We never sell or share your data with third parties. All transaction details are secured using 256-bit encryption.',
+        };
+      case 'terms':
+        return {
+          title: 'Terms of Service',
+          content: 'By enrolling in Mastermind AidIT courses, you agree to access course videos and materials strictly for personal learning. Course contents may not be redistributed, recorded, or resold without explicit authorization. Accounts found violating IP terms will be permanently suspended.',
+        };
+      case 'refund':
+        return {
+          title: 'Refund Policy',
+          content: 'We offer a 3-day money-back guarantee for premium course enrollments if less than 20% of the course content has been consumed. To request a refund, contact support@mastermindaidit.com with your transaction ID.',
+        };
+      default:
+        return null;
+    }
+  };
+
+  const modalData = getPolicyContent();
+
   return (
     <footer className="bg-[#0A192F] text-white pt-16 pb-8 border-t border-slate-800 relative overflow-hidden">
       
@@ -146,13 +174,44 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
             © 2026 <strong className="text-white">MASTERMIND AIDIT</strong>. All Rights Reserved. Built with Excellence.
           </div>
           <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-white transition">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition">Terms of Service</a>
-            <a href="#" className="hover:text-white transition">Refund Policy</a>
+            <button onClick={() => setActiveModal('privacy')} className="hover:text-white transition cursor-pointer">Privacy Policy</button>
+            <button onClick={() => setActiveModal('terms')} className="hover:text-white transition cursor-pointer">Terms of Service</button>
+            <button onClick={() => setActiveModal('refund')} className="hover:text-white transition cursor-pointer">Refund Policy</button>
           </div>
         </div>
 
       </div>
+
+      {/* Policy Modal */}
+      {activeModal && modalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0B1B33] border border-slate-700 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <FileText className="w-5 h-5 text-brand-400" />
+                <h3 className="text-lg font-black text-white">{modalData.title}</h3>
+              </div>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-300 leading-relaxed font-medium">
+              {modalData.content}
+            </p>
+            <div className="pt-4 flex justify-end border-t border-slate-800">
+              <button
+                onClick={() => setActiveModal(null)}
+                className="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-lg transition"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </footer>
   );
 };

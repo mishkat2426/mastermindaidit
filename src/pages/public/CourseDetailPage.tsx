@@ -437,8 +437,9 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ onAddToCart,
           </div>
         )}
 
-        {/* Tab 3: Student Reviews & 5-Star Rating Breakdown (Requirement #9 & #10) */}
+        {/* Tab 3: Student Reviews & 5-Star Rating Breakdown */}
         {activeTab === 'reviews' && (
+
           <div className="space-y-8 max-w-4xl">
             
             {/* Calculated Rating & Distribution Card */}
@@ -524,8 +525,9 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ onAddToCart,
           </div>
         )}
 
-        {/* Tab 4: Discussion & Q&A Comments (Requirement #12 & #15) */}
+        {/* Tab 4: Discussion & Q&A Comments */}
         {activeTab === 'discussion' && (
+
           <div className="space-y-6 max-w-4xl">
             
             {/* Write Comment Box */}
@@ -619,8 +621,9 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ onAddToCart,
 
       </div>
 
-      {/* Review Modal (Requirement #11) */}
+      {/* Review Submission Modal */}
       {showReviewModal && (
+
         <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
             <div className="flex justify-between items-center">
@@ -676,8 +679,9 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ onAddToCart,
         </div>
       )}
 
-      {/* Report Comment Modal (Requirement #15) */}
+      {/* Report Comment Moderation Modal */}
       {reportCommentId && (
+
         <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-3xl max-w-sm w-full border border-slate-200 shadow-2xl space-y-4">
             <h3 className="text-lg font-black text-[#0A192F]">Report Inappropriate Comment</h3>

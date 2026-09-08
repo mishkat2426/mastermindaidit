@@ -1,3 +1,9 @@
+/**
+ * Hero Section Interactive Canvas Particle Animation Component
+ * Creates dynamic particle node physics with connecting network lines on Hero banner.
+ * Supports DPI devicePixelRatio crisp canvas scaling for 4K / Retina displays.
+ */
+
 import React, { useEffect, useRef } from 'react';
 
 export const HeroParticles: React.FC = () => {
@@ -11,19 +17,31 @@ export const HeroParticles: React.FC = () => {
     if (!ctx) return;
 
     let animationFrameId: number;
-    let width = (canvas.width = canvas.offsetWidth);
-    let height = (canvas.height = canvas.offsetHeight);
+    let dpr = window.devicePixelRatio || 1;
+    let width = canvas.offsetWidth;
+    let height = canvas.offsetHeight;
+
+    // High-DPI Resolution Adjuster
+    const setupCanvasScale = () => {
+      if (!canvas) return;
+      dpr = window.devicePixelRatio || 1;
+      width = canvas.offsetWidth;
+      height = canvas.offsetHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+    };
+
+    setupCanvasScale();
 
     const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = canvas.offsetWidth;
-      height = canvas.height = canvas.offsetHeight;
+      setupCanvasScale();
     };
 
     window.addEventListener('resize', handleResize);
 
-    // Particle nodes
-    const particleCount = Math.floor((width * height) / 18000);
+    // Initialize particle node swarm
+    const particleCount = Math.min(60, Math.floor((width * height) / 18000));
     const particles = Array.from({ length: particleCount }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
@@ -36,7 +54,7 @@ export const HeroParticles: React.FC = () => {
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Draw particle connections
+      // Update particle physics & render lines
       for (let i = 0; i < particles.length; i++) {
         const p1 = particles[i];
         p1.x += p1.vx;
@@ -45,13 +63,13 @@ export const HeroParticles: React.FC = () => {
         if (p1.x < 0 || p1.x > width) p1.vx *= -1;
         if (p1.y < 0 || p1.y > height) p1.vy *= -1;
 
-        // Draw particle dot
+        // Draw particle node dot
         ctx.beginPath();
         ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(13, 95, 249, ${p1.alpha})`;
         ctx.fill();
 
-        // Connect nearby particles
+        // Draw connecting vector network lines
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p1.x - p2.x;

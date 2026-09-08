@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { DBService } from '../../services/db';
 import { Course, User, Transaction, Review, Comment, Category, AuditLog, ReviewStatus, CommentStatus, UserRole, WebsiteContentItem, CourseLevel, CourseStatus } from '../../types/platform';
+import { AdminDomainHosting } from './AdminDomainHosting';
 import { 
   Layout, 
   Users, 
@@ -50,7 +51,7 @@ export const AdminDashboard: React.FC = () => {
   const { currentUser, logout, updateProfile, changePassword } = useAuth();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'users' | 'teachers' | 'reviews' | 'comments' | 'transactions' | 'categories' | 'audit' | 'administrators' | 'website-content'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'users' | 'teachers' | 'reviews' | 'comments' | 'transactions' | 'categories' | 'audit' | 'administrators' | 'website-content' | 'domain-hosting'>('overview');
   
   // Administrator & Access Code Form states
   const [newAdminName, setNewAdminName] = useState('');
@@ -856,6 +857,7 @@ export const AdminDashboard: React.FC = () => {
               { id: 'transactions', label: 'Transactions Ledger', icon: <CreditCard className="w-4 h-4 text-emerald-400" />, badge: pendingTrxCount },
               { id: 'categories', label: 'Category Manager', icon: <Tag className="w-4 h-4" /> },
               { id: 'administrators', label: 'Admins & Access Codes', icon: <ShieldCheck className="w-4 h-4 text-purple-400" /> },
+              { id: 'domain-hosting', label: 'Domain & Hosting', icon: <Globe className="w-4 h-4 text-emerald-400" /> },
               { id: 'audit', label: 'Audit Logs', icon: <History className="w-4 h-4 text-slate-400" /> },
             ].map((item) => (
               <button
@@ -1726,8 +1728,9 @@ export const AdminDashboard: React.FC = () => {
           );
         })()}
 
-        {/* Tab 5: Reviews Moderation (Requirement #8) */}
+        {/* Tab 5: Reviews Moderation Engine */}
         {activeTab === 'reviews' && (
+
           <div className="bg-[#0A192F] p-6 rounded-3xl border border-slate-800 space-y-4">
             <h3 className="text-lg font-black flex items-center gap-2">
               <Star className="w-5 h-5 text-amber-400" />
@@ -1781,8 +1784,9 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 6: Comments & Reports (Requirement #13 & #14) */}
+        {/* Tab 6: Comments & Flagged Content Moderation */}
         {activeTab === 'comments' && (
+
           <div className="bg-[#0A192F] p-6 rounded-3xl border border-slate-800 space-y-4">
             <h3 className="text-lg font-black flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-rose-400" />
@@ -2112,8 +2116,9 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab: Administrators & Access Codes (Requirement #13 & #14) */}
+        {/* Tab: Administrators & Access Code Management */}
         {activeTab === 'administrators' && (
+
           <div className="space-y-6">
             
             {/* Create Administrator Card */}
@@ -2227,6 +2232,11 @@ export const AdminDashboard: React.FC = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Tab 10: Domain & Hosting Manager */}
+        {activeTab === 'domain-hosting' && (
+          <AdminDomainHosting />
         )}
 
       </main>

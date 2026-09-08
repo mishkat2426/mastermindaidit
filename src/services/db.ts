@@ -1,3 +1,9 @@
+/**
+ * MASTERMIND AIDIT Database Persistence Service Engine
+ * Manages LocalStorage persistence, seed data initialization, real-time event broadcasting,
+ * authentication access hashes, custom domain configurations, and audit logging.
+ */
+
 import { 
   User, 
   UserRole,
@@ -17,7 +23,9 @@ import {
   ReviewStatus,
   CommentStatus,
   ReportReason,
-  WebsiteContentItem
+  WebsiteContentItem,
+  DomainHostingSettings,
+  HostingProviderType
 } from '../types/platform';
 import { COURSES as INITIAL_COURSES, CATEGORIES as INITIAL_CATEGORIES } from '../data/coursesData';
 
@@ -36,7 +44,20 @@ const STORAGE_KEYS = {
   TEACHER_CODE: 'mastermind_teacher_code_v3',
   ADMIN_CODE: 'mastermind_admin_code_v4',
   WEBSITE_CONTENT: 'mastermind_website_content_v3',
+  DOMAIN_SETTINGS: 'mastermind_domain_settings_v1',
 };
+
+const INITIAL_DOMAIN_SETTINGS: DomainHostingSettings = {
+  customDomain: 'mastermindaidit.com',
+  selectedProvider: 'vercel',
+  sslActive: true,
+  forceHttps: true,
+  dnsValid: true,
+  spaRedirectOk: true,
+  lastVerifiedAt: '2026-09-08T12:00:00.000Z',
+  verifiedBy: 'MASTERMIND AIDIT Admin',
+};
+
 
 // Seed Users
 const INITIAL_USERS: User[] = [
@@ -279,8 +300,35 @@ const DEFAULT_TEACHER_CODE_HASH = hashSecretSync('MASTERMIND10');
 const DEFAULT_ADMIN_CODE_HASH = hashSecretSync('MASUDUL');
 
 export class DBService {
+  // Custom Domain & Hosting Settings Engine
+  static getDomainSettings(): DomainHostingSettings {
+    return loadData<DomainHostingSettings>(STORAGE_KEYS.DOMAIN_SETTINGS, INITIAL_DOMAIN_SETTINGS);
+  }
+
+  static updateDomainSettings(settings: Partial<DomainHostingSettings>, adminName?: string): DomainHostingSettings {
+    const current = this.getDomainSettings();
+    const updated: DomainHostingSettings = {
+      ...current,
+      ...settings,
+      lastVerifiedAt: new Date().toISOString(),
+      verifiedBy: adminName || current.verifiedBy || 'Admin',
+    };
+    saveData(STORAGE_KEYS.DOMAIN_SETTINGS, updated);
+    if (adminName) {
+      this.logAdminAction(
+        'admin-system',
+        adminName,
+        `Updated Domain Configuration: ${updated.customDomain} (${updated.selectedProvider.toUpperCase()})`,
+        'DomainHosting',
+        'domain-config-1'
+      );
+    }
+    return updated;
+  }
+
   // Access Code Verification Engine
   static getTeacherAccessCodeHash(): string {
+
     return loadData<string>(STORAGE_KEYS.TEACHER_CODE, DEFAULT_TEACHER_CODE_HASH);
   }
 

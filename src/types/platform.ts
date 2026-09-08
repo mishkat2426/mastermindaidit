@@ -242,3 +242,17 @@ export interface RatingStats {
     1: number;
   };
 }
+
+export type HostingProviderType = 'vercel' | 'netlify' | 'hostinger' | 'firebase' | 'cloudflare' | 'vps' | 'github';
+
+export interface DomainHostingSettings {
+  customDomain: string;
+  selectedProvider: HostingProviderType;
+  sslActive: boolean;
+  forceHttps: boolean;
+  dnsValid: boolean;
+  spaRedirectOk: boolean;
+  lastVerifiedAt?: string;
+  verifiedBy?: string;
+}
+

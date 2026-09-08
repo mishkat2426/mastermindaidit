@@ -52,7 +52,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onOpenPathFinder,
   onOpenCertificateShowcase,
 }) => {
-  // Query actual real enrollments from database (Requirement #3 & #4: NO FAKE NAMES OR LOCATIONS)
+  // Fetch recent verified enrollments for live ticker
   const realEnrollments = DBService.getEnrollments();
   
   // Format real privacy-friendly tickers from database

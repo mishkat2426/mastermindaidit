@@ -387,7 +387,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ presetRole }) => {
                 </div>
               </div>
 
-              {/* Requirement #3: Teacher Access Code */}
+              {/* Teacher Security Access Code */}
               <div>
                 <label className="block text-xs font-bold text-emerald-400 mb-1">
                   Teacher Access Code {teacherTab === 'activate' && '(Required)'}
@@ -423,7 +423,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ presetRole }) => {
           </div>
         )}
 
-        {/* ADMIN LOGIN FORM (Requirement #4 & #6) */}
+        {/* Administrator Security Login Gateway */}
         {activeRole === 'ADMIN' && (
           <div className="bg-[#0B1B33]/90 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-purple-500/40 shadow-2xl space-y-5">
             <div className="flex items-center gap-2 text-xs text-purple-300 font-bold bg-purple-500/10 p-3 rounded-xl border border-purple-500/20">
@@ -470,7 +470,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ presetRole }) => {
                 </div>
               </div>
 
-              {/* Requirement #4 & #6: Admin Special Access Code */}
+              {/* Admin Security Access Code */}
+
               <div>
                 <label className="block text-xs font-bold text-purple-400 mb-1">
                   Admin Security Access Code (Required)

@@ -105,33 +105,35 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-1.5 sm:gap-3">
             
             {/* Quick Global Search Icon */}
-            {/* <button
+            <button
               onClick={() => {
                 playUiClickSound();
                 onOpenSearch();
               }}
-              className="p-2 sm:p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition border border-white/5"
+              className="p-2 sm:p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition border border-white/10 shadow-sm group"
               aria-label="Search Academy Courses"
+              title="Search Courses"
             >
-              <Search className="w-4 h-4" />
-            </button> */}
+              <Search className="w-4 h-4 group-hover:scale-110 transition-transform text-brand-400" />
+            </button>
 
             {/* Smart Cart Icon with Badge */}
-            {/* <button
+            <button
               onClick={() => {
                 playUiClickSound();
                 onOpenCart();
               }}
-              className="relative p-2 sm:p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition border border-white/5"
+              className="relative p-2 sm:p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition border border-white/10 shadow-sm group"
               aria-label="View Shopping Cart"
+              title="Shopping Cart"
             >
-              <ShoppingCart className="w-4 h-4" />
+              <ShoppingCart className="w-4 h-4 group-hover:scale-110 transition-transform text-emerald-400" />
               {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-brand-500 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gradient-to-r from-amber-500 to-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-lg animate-pulse ring-2 ring-[#0A192F]">
                   {cartCount}
                 </span>
               )}
-            </button> */}
+            </button>
 
             {/* User Profile / Dashboard / Login Action */}
             {isAuthenticated && currentUser ? (
