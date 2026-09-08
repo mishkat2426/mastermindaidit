@@ -41,8 +41,8 @@ const STORAGE_KEYS = {
   CATEGORIES: 'mastermind_categories_v3',
   AUDIT_LOGS: 'mastermind_audit_logs_v3',
   ANNOUNCEMENTS: 'mastermind_announcements_v3',
-  TEACHER_CODE: 'mastermind_teacher_code_v3',
-  ADMIN_CODE: 'mastermind_admin_code_v4',
+  TEACHER_CODE: 'mastermind_teacher_code_v5',
+  ADMIN_CODE: 'mastermind_admin_code_v6',
   WEBSITE_CONTENT: 'mastermind_website_content_v3',
   DOMAIN_SETTINGS: 'mastermind_domain_settings_v1',
 };
@@ -296,8 +296,8 @@ export function hashSecretSync(ascii: string): string {
 }
 
 // Initial hashed digests for default access codes (no plaintext strings stored in code)
-const DEFAULT_TEACHER_CODE_HASH = hashSecretSync('MASTERMIND10');
-const DEFAULT_ADMIN_CODE_HASH = hashSecretSync('MASUDUL');
+const DEFAULT_TEACHER_CODE_HASH = hashSecretSync('TEACHER');
+const DEFAULT_ADMIN_CODE_HASH = hashSecretSync('ADMINISTRATION');
 
 export class DBService {
   // Custom Domain & Hosting Settings Engine
@@ -340,7 +340,7 @@ export class DBService {
     if (!inputCode) return false;
     const cleanInput = inputCode.trim().toUpperCase();
     const inputHash = hashSecretSync(cleanInput);
-    return inputHash === this.getTeacherAccessCodeHash() || cleanInput === 'MASTERMIND10';
+    return inputHash === this.getTeacherAccessCodeHash() || cleanInput === 'TEACHER';
   }
 
   static verifyAdminCode(inputCode: string): boolean {
@@ -357,10 +357,10 @@ export class DBService {
     return inputHashUpper === storedHash || 
            inputHashLower === storedHash || 
            inputHashRaw === storedHash || 
-           cleanLowerNoSpace === 'masudul' || 
-           cleanUpper === 'MASUDUL' || 
-           cleanUpperNoSpace === 'MASUDUL' || 
-           cleanInput === 'masudul';
+           cleanLowerNoSpace === 'administration' || 
+           cleanUpper === 'ADMINISTRATION' || 
+           cleanUpperNoSpace === 'ADMINISTRATION' || 
+           cleanInput === 'administration';
   }
 
   static rotateAccessCodes(adminName: string, newTeacherCode?: string, newAdminCode?: string): void {

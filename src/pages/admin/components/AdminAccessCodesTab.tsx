@@ -54,7 +54,7 @@ export const AdminAccessCodesTab: React.FC<AdminAccessCodesTabProps> = ({
               <input
                 type="password"
                 required
-                placeholder="Enter new teacher code (e.g. MASTERMIND10)..."
+                placeholder="Enter new teacher code (e.g. TEACHER)..."
                 value={newTeacherAccessCode}
                 onChange={(e) => setNewTeacherAccessCode(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -87,7 +87,7 @@ export const AdminAccessCodesTab: React.FC<AdminAccessCodesTabProps> = ({
               <input
                 type="password"
                 required
-                placeholder="Enter new admin code (e.g. MASUDUL)..."
+                placeholder="Enter new admin code (e.g. ADMINISTRATION)..."
                 value={newAdminSecurityCode}
                 onChange={(e) => setNewAdminSecurityCode(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none"
