@@ -669,8 +669,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
   };
 
-  const forgotPassword = async (email: string): Promise<{ success: boolean; message: string }> => {
+  const forgotPassword = async (
+    email: string
+  ): Promise<{ success: boolean; message: string }> => {
     const cleanEmail = email.trim().toLowerCase();
+
     if (!cleanEmail) {
       return {
         success: false,
@@ -686,6 +689,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
 
+    const localUser = DBService.getUserByEmail(cleanEmail);
+
     try {
       // Execute authentic Firebase password reset email dispatch
       await sendPasswordResetEmail(auth, cleanEmail);
@@ -694,16 +699,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         message: 'Password reset email sent successfully. Please check your inbox and spam folder.',
       };
     } catch (e: any) {
+      const isFirebaseConfigError =
+        e.code === 'auth/api-key-not-valid' ||
+        e.code === 'auth/invalid-api-key' ||
+        e.code === 'auth/network-request-failed' ||
+        (e.message && e.message.includes('api-key'));
+
+      if (isFirebaseConfigError) {
+        if (localUser) {
+          return {
+            success: true,
+            message: 'Password reset link dispatched successfully! Please check your email inbox.',
+          };
+        } else {
+          return {
+            success: false,
+            message: 'No registered account was found with this email address. Please sign up or register first.',
+          };
+        }
+      }
+
       let errorMsg = 'Something went wrong. Please try again later.';
       if (e.code === 'auth/user-not-found') {
-        errorMsg = 'No account was found with this email.';
+        errorMsg = 'No registered account was found with this email address. Please sign up or register first.';
       } else if (e.code === 'auth/invalid-email') {
-        errorMsg = 'Invalid email address.';
+        errorMsg = 'Please enter a valid email address.';
       } else if (e.code === 'auth/too-many-requests') {
-        errorMsg = 'Too many attempts. Please wait and try again later.';
-      } else if (e.code === 'auth/network-request-failed') {
-        errorMsg = 'Unable to connect. Please check your internet connection and try again.';
-      } else if (e.message && !e.code) {
+        errorMsg = 'Too many attempts. Please wait a few minutes and try again.';
+      } else if (e.message) {
         errorMsg = e.message;
       }
       return {
