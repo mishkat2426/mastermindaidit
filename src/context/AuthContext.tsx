@@ -360,7 +360,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 1. Validate Admin Security Code first
     if (!DBService.verifyAdminCode(adminSecurityCode)) {
       setIsLoading(false);
-      return { success: false, error: 'Invalid Admin Security Access Code. Please enter valid master code (ADMINISTRATION).' };
+      return { success: false, error: 'Invalid Admin Security Access Code. Please check your credentials.' };
     }
 
     let localUser = DBService.getUserByEmail(cleanEmail);

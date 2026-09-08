@@ -384,6 +384,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ presetRole }) => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 pr-10 py-3 bg-[#071325] border border-slate-700 rounded-xl text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold hover:text-emerald-400 transition"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
                 </div>
               </div>
 
@@ -467,6 +474,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ presetRole }) => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 pr-10 py-3 bg-[#071325] border border-slate-700 rounded-xl text-xs font-bold text-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold hover:text-purple-400 transition"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
                 </div>
               </div>
 
