@@ -16,6 +16,9 @@ export const CertificateShowcase: React.FC<CertificateShowcaseProps> = ({ isOpen
 
   const handleDownload = () => {
     setIsDownloaded(true);
+    try {
+      window.print();
+    } catch (e) {}
     setTimeout(() => setIsDownloaded(false), 3000);
   };
 
