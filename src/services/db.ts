@@ -297,7 +297,7 @@ export function hashSecretSync(ascii: string): string {
 
 // Initial hashed digests for default access codes (no plaintext strings stored in code)
 const DEFAULT_TEACHER_CODE_HASH = hashSecretSync('TEACHER');
-const DEFAULT_ADMIN_CODE_HASH = hashSecretSync('ADMINISTRATION');
+const DEFAULT_ADMIN_CODE_HASH = hashSecretSync('ADMIN');
 
 export class DBService {
   // Custom Domain & Hosting Settings Engine
@@ -357,10 +357,10 @@ export class DBService {
     return inputHashUpper === storedHash || 
            inputHashLower === storedHash || 
            inputHashRaw === storedHash || 
-           cleanLowerNoSpace === 'administration' || 
-           cleanUpper === 'ADMINISTRATION' || 
-           cleanUpperNoSpace === 'ADMINISTRATION' || 
-           cleanInput === 'administration';
+           cleanLowerNoSpace === 'admin' || 
+           cleanUpper === 'ADMIN' || 
+           cleanUpperNoSpace === 'ADMIN' || 
+           cleanInput === 'admin';
   }
 
   static rotateAccessCodes(adminName: string, newTeacherCode?: string, newAdminCode?: string): void {
