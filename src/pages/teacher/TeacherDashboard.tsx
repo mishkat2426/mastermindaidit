@@ -57,9 +57,14 @@ export const TeacherDashboard: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState('');
 
   const categories = DBService.getCategories();
-  const myCourses = DBService.getCourses().filter(
+  const [coursesList, setCoursesList] = useState<Course[]>(() => DBService.getCourses());
+  const myCourses = coursesList.filter(
     (c) => c.teacherId === currentUser?.id || c.teacherName.toLowerCase().includes(currentUser?.name.toLowerCase() || '')
   );
+
+  const refreshCourses = () => {
+    setCoursesList(DBService.getCourses());
+  };
 
   const enrollments = DBService.getEnrollments();
   const myStudents = enrollments.filter((e) => myCourses.some((c) => c.id === e.courseId));
@@ -130,19 +135,19 @@ export const TeacherDashboard: React.FC = () => {
     }
 
     setShowCourseEditorModal(false);
-    window.location.reload();
+    refreshCourses();
   };
 
   const handleTogglePublishCourse = (course: Course) => {
     const nextStatus = course.status === 'PUBLISHED' ? 'UNPUBLISHED' : 'PUBLISHED';
     DBService.updateCourse(course.id, { status: nextStatus }, currentUser?.name);
-    window.location.reload();
+    refreshCourses();
   };
 
   const handleDeleteCourse = (courseId: string) => {
     if (confirm('Are you sure you want to delete this course from the platform?')) {
       DBService.deleteCourse(courseId, currentUser?.name);
-      window.location.reload();
+      refreshCourses();
     }
   };
 
@@ -164,14 +169,13 @@ export const TeacherDashboard: React.FC = () => {
     setVideoUrl('');
     setVideoDescription('');
     setShowVideoModal(false);
-    alert('New video lecture added to course!');
-    window.location.reload();
+    refreshCourses();
   };
 
   const handleDeleteVideo = (courseId: string, lessonId: string) => {
     if (confirm('Delete this video lecture?')) {
       DBService.deleteLessonFromCourse(courseId, lessonId, currentUser?.name);
-      window.location.reload();
+      refreshCourses();
     }
   };
 
@@ -189,14 +193,13 @@ export const TeacherDashboard: React.FC = () => {
     setPdfTitle('');
     setPdfUrl('');
     setShowPdfModal(false);
-    alert('New PDF resource attached to course!');
-    window.location.reload();
+    refreshCourses();
   };
 
   const handleDeletePdf = (courseId: string, pdfId: string) => {
     if (confirm('Remove this PDF document resource?')) {
       DBService.deletePdfResourceFromCourse(courseId, pdfId, currentUser?.name);
-      window.location.reload();
+      refreshCourses();
     }
   };
 

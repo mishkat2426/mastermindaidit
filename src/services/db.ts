@@ -766,8 +766,11 @@ export class DBService {
   static createCourse(course: Omit<Course, 'id' | 'createdAt' | 'updatedAt'>, adminName?: string): Course {
     const courses = this.getCourses();
     const generatedSlug = (course.slug || course.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')) || `course-${Date.now()}`;
+    const isFreeComputed = Boolean(course.isFree || course.price === 0);
     const newCourse: Course = {
       ...course,
+      isFree: isFreeComputed,
+      price: isFreeComputed ? 0 : course.price,
       bengaliTitle: course.bengaliTitle || course.title,
       bengaliDescription: course.bengaliDescription || course.description,
       discountPrice: course.discountPrice,

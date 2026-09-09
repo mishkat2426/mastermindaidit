@@ -90,7 +90,7 @@ export const CertificateShowcase: React.FC<CertificateShowcaseProps> = ({ isOpen
           {/* Live Certificate Canvas Graphic */}
           <div className="p-6 sm:p-10 bg-slate-100 flex items-center justify-center overflow-x-auto">
             
-            <div className="w-[620px] bg-white rounded-2xl p-8 border-8 border-brand-800/10 shadow-2xl relative overflow-hidden font-serif shrink-0">
+            <div className="certificate-print-area w-[620px] bg-white rounded-2xl p-8 border-8 border-brand-800/10 shadow-2xl relative overflow-hidden font-serif shrink-0">
               
               {/* Outer Decorative Gold Border Frame */}
               <div className="absolute inset-3 border-2 border-amber-400/40 rounded-xl pointer-events-none" />

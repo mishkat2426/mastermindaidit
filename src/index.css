@@ -257,3 +257,27 @@
     -webkit-backdrop-filter: blur(8px);
   }
 }
+
+/* ================================================
+   PRINT STYLES FOR E-CERTIFICATE GENERATOR
+   ================================================ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .certificate-print-area,
+  .certificate-print-area * {
+    visibility: visible;
+  }
+  .certificate-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 2rem !important;
+    box-shadow: none !important;
+    border-width: 4px !important;
+  }
+}
