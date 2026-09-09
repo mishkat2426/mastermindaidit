@@ -79,6 +79,17 @@ export const CheckoutPage: React.FC = () => {
         accountNumber: phoneNumber.trim(),
       });
 
+      // Clear checked-out course from cart
+      try {
+        const savedCartRaw = localStorage.getItem('mastermindaidit_cart');
+        if (savedCartRaw) {
+          const cartItems = JSON.parse(savedCartRaw);
+          const updatedCart = cartItems.filter((item: any) => item.id !== course.id);
+          localStorage.setItem('mastermindaidit_cart', JSON.stringify(updatedCart));
+          window.dispatchEvent(new CustomEvent('mastermind_cart_updated'));
+        }
+      } catch (e) {}
+
       setSubmittedTrx(trx);
       setIsProcessing(false);
       setIsSuccess(true);

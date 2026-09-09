@@ -161,9 +161,15 @@ export const AdminDashboard: React.FC = () => {
   const [trxSearch, setTrxSearch] = useState('');
   const [adminToast, setAdminToast] = useState<string | null>(null);
 
-  const reviews = DBService.getReviews();
-  const comments = DBService.getComments();
-  const categories = DBService.getCategories();
+  const [reviewsList, setReviewsList] = useState<Review[]>(() => DBService.getReviews());
+  const [commentsList, setCommentsList] = useState<Comment[]>(() => DBService.getComments());
+  const [categoriesList, setCategoriesList] = useState<Category[]>(() => DBService.getCategories());
+  const [websiteContentsList, setWebsiteContentsList] = useState<WebsiteContentItem[]>(() => DBService.getWebsiteContents());
+
+  const reviews = reviewsList;
+  const comments = commentsList;
+  const categories = categoriesList;
+  const websiteContents = websiteContentsList;
   const auditLogs = DBService.getAuditLogs();
 
   const teachers = users.filter((u) => u.role === 'TEACHER');
@@ -407,7 +413,6 @@ export const AdminDashboard: React.FC = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Website Content & CMS State
-  const websiteContents = DBService.getWebsiteContents();
   const [editingContentItem, setEditingContentItem] = useState<WebsiteContentItem | null>(null);
   const [showNewLocationModal, setShowNewLocationModal] = useState(false);
 
@@ -450,10 +455,10 @@ export const AdminDashboard: React.FC = () => {
       buttonText: contentButtonText,
       buttonUrl: contentButtonUrl,
     }, currentUser?.name);
+    setWebsiteContentsList(DBService.getWebsiteContents());
     setEditingContentItem(null);
     setShowNewLocationModal(false);
-    alert('Website section content updated successfully! Public page will display updated media immediately.');
-    window.location.reload();
+    showAdminToast('Website section content updated successfully!');
   };
 
   // Course Thumbnail Presets
@@ -766,26 +771,30 @@ export const AdminDashboard: React.FC = () => {
   // Review Actions
   const handleReviewStatus = (reviewId: string, status: ReviewStatus) => {
     DBService.updateReviewStatus(reviewId, status, currentUser?.name || 'Admin');
-    window.location.reload();
+    setReviewsList(DBService.getReviews());
+    showAdminToast(`Review status updated to ${status}.`);
   };
 
   const handleDeleteReview = (reviewId: string) => {
     if (confirm('Delete this review permanently?')) {
       DBService.deleteReview(reviewId, currentUser?.name);
-      window.location.reload();
+      setReviewsList(DBService.getReviews());
+      showAdminToast('Review deleted permanently.');
     }
   };
 
   // Comment Actions
   const handleCommentStatus = (commentId: string, status: CommentStatus) => {
     DBService.updateCommentStatus(commentId, status, currentUser?.name || 'Admin');
-    window.location.reload();
+    setCommentsList(DBService.getComments());
+    showAdminToast(`Comment status updated to ${status}.`);
   };
 
   const handleDeleteComment = (commentId: string) => {
     if (confirm('Delete this comment permanently?')) {
       DBService.deleteComment(commentId, currentUser?.name);
-      window.location.reload();
+      setCommentsList(DBService.getComments());
+      showAdminToast('Comment deleted permanently.');
     }
   };
 
@@ -802,7 +811,8 @@ export const AdminDashboard: React.FC = () => {
     setNewCatName('');
     setNewCatBengali('');
     setNewCatDesc('');
-    window.location.reload();
+    setCategoriesList(DBService.getCategories());
+    showAdminToast('New category created successfully!');
   };
 
   const handleCreateAdmin = (e: React.FormEvent) => {

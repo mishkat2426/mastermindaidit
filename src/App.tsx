@@ -38,7 +38,7 @@ export function App() {
   const [isPathFinderOpen, setIsPathFinderOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Save Cart to LocalStorage
+  // Save Cart to LocalStorage & listen for external cart updates
   useEffect(() => {
     try {
       localStorage.setItem('mastermindaidit_cart', JSON.stringify(cart));
@@ -46,6 +46,22 @@ export function App() {
       console.error('Failed to save cart:', e);
     }
   }, [cart]);
+
+  useEffect(() => {
+    const handleCartStorage = () => {
+      try {
+        const saved = localStorage.getItem('mastermindaidit_cart');
+        setCart(saved ? JSON.parse(saved) : []);
+      } catch (e) {}
+    };
+
+    window.addEventListener('mastermind_cart_updated', handleCartStorage);
+    window.addEventListener('storage', handleCartStorage);
+    return () => {
+      window.removeEventListener('mastermind_cart_updated', handleCartStorage);
+      window.removeEventListener('storage', handleCartStorage);
+    };
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
